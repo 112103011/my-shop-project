@@ -1,6 +1,54 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 
+// 1. 宣告一個反應式變數 (ref)，初始值是一個「空陣列 []」
+// 為什麼要用 ref？因為當資料從後端抓回來後，Vue 會偵測到 products 變了，自動幫你重繪網頁
+const products = ref([]);
+const getProducts = async () =>{
+  try{
+    // 2. 使用 fetch 去抓新的網址 /api/products
+    const response = await fetch('http://localhost:3000/api/products')
+
+    // 3. 把回應轉成 JSON 格式的 JavaScript 陣列
+    const data = await response.json()
+
+    // 4. 把資料塞進我們的變數裡
+    products.value = data
+
+  }catch(error){
+    console.error('抓取商品失敗：', error)
+  }
+}//end const getproducts
+
+// 5. 網頁一載入就跑 getProducts
+onMounted(getProducts)
+
+//定義一個處理點擊的函式
+const handleAdd =(name) =>{
+  // 在這裡，JavaScript 可以直接存取瀏覽器的 alert
+  alert('add:' + name);
+} ;
+
+</script>
+
+<template>
+  <div class='app'>
+    <h1>e-shop</h1>
+
+    <div class = 'product-container'>
+      <div v-for= "item in products" :key="item.id" class= "card">
+        <img :src= "item.image" alt= "picture">
+        <h3>{{item.name}}</h3>
+        <p>NT$ {{item.price}}</p>
+        <button @click="handleAdd(item.name)">add</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+
+
+/**
 // 【建立狀態】
 // ref 就像是一個「會自動更新的顯示板」。
 // 當 message 的值改變時，網頁畫面上用到它的地方會「砰」的一聲自動變換，不用手動去改 HTML。
@@ -28,10 +76,9 @@ const fetchData = async() =>{// 定義一個「拿資料」的動作
 onMounted(() => {
   fetchData()
 })//end onMounted
+**/
 
-</script>
-
-<template>
+<!-- <template>
   <div style="text-align: center; margin-top: 50px;">
     <h1>我的購物網站</h1>
     <div style="padding: 20px; border: 1px solid #ccc;">
@@ -39,4 +86,4 @@ onMounted(() => {
       <p style="color: blue; font-size: 20px;">{{ message }}</p>
     </div>
   </div>
-</template>
+</template> -->

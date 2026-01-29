@@ -4,6 +4,11 @@ import { ref, onMounted } from 'vue';
 // 1. 宣告一個反應式變數 (ref)，初始值是一個「空陣列 []」
 // 為什麼要用 ref？因為當資料從後端抓回來後，Vue 會偵測到 products 變了，自動幫你重繪網頁
 const products = ref([]);
+// 這兩個變數用來對接輸入框
+const newProductName = ref('');
+const newProductPrice = ref(0);
+
+//抓取商品函式
 const getProducts = async () =>{
   try{
     // 2. 使用 fetch 去抓新的網址 /api/products
@@ -18,7 +23,47 @@ const getProducts = async () =>{
   }catch(error){
     console.error('抓取商品失敗：', error)
   }
-}//end const getproducts
+};//end const getproducts
+
+//發送商品函式
+const addProduct = async() =>{
+
+  if(!newProductName) return alert('請輸入名稱');
+  
+  // 使用 fetch 發送 POST 請求
+  const response = await fetch('http://localhost:3000/api/products', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    // 將變數轉成 JSON 字串寄出去
+    body:JSON.stringify({
+      name: newProductName.value,
+      price: newProductPrice.value
+    }) 
+  });
+
+  if(response.ok){
+    alert('上架成功');
+    newProductName.value = ''; // 清空欄位
+    newProductPrice.value = '0';
+    getProducts(); // 重新抓取資料庫，讓畫面出現新商品
+  };
+};//end const addProduct
+
+//刪除商品函式
+const deleteProduct = async(id) => {
+
+  if(!confirm('確定要刪除這個商品嗎？')) return; // 彈出視窗確認，防止誤刪
+  
+  //Fetch 請求：使用「反引號」組合網址
+  const response = await fetch(`http://localhost:3000/api/products/${id}`, {
+    method: 'Delete'
+  });
+
+  if(response.ok){
+    // 刪除成功後，重新抓取清單更新畫面
+    getProducts();
+  };
+};//end const deleteProduct
 
 // 5. 網頁一載入就跑 getProducts
 onMounted(getProducts)
@@ -27,7 +72,7 @@ onMounted(getProducts)
 const handleAdd =(name) =>{
   // 在這裡，JavaScript 可以直接存取瀏覽器的 alert
   alert('add:' + name);
-} ;
+};
 
 </script>
 
@@ -41,11 +86,19 @@ const handleAdd =(name) =>{
         <h3>{{item.name}}</h3>
         <p>NT$ {{item.price}}</p>
         <button @click="handleAdd(item.name)">add</button>
+        <button @click="deleteProduct(item.id)" style="color: red;">delete</button>
       </div>
     </div>
   </div>
-</template>
 
+  <div class="add-form">
+    <h2>上架新商品</h2>
+    <input v-model="newProductName" placeholder="商品名稱">
+    <input v-model.number="newProductPrice" type="number" placeholder="價格">
+    <button @click="addProduct">確認上架</button>
+  </div>
+
+</template>
 
 
 /**

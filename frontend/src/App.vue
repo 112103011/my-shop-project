@@ -1,18 +1,19 @@
 <script setup>
 import { ref, onMounted } from 'vue';
+import ProductCard from './components/ProductCard.vue';
+import AddProductForm from './components/AddProductForm.vue';
 
 // 1. 宣告一個反應式變數 (ref)，初始值是一個「空陣列 []」
 // 為什麼要用 ref？因為當資料從後端抓回來後，Vue 會偵測到 products 變了，自動幫你重繪網頁
 const products = ref([]);
-// 這兩個變數用來對接輸入框
-const newProductName = ref('');
-const newProductPrice = ref(0);
 
 //抓取商品函式
 const getProducts = async () =>{
   try{
     // 2. 使用 fetch 去抓新的網址 /api/products
-    const response = await fetch('http://localhost:3000/api/products')
+    // 技巧：在網址後面加上 "?t=" 和現在的時間
+    // 這樣每次網址都不一樣，瀏覽器就不會偷懶讀舊資料了
+    const response = await fetch('http://localhost:3000/api/products?t={new Date().getTime()}')
 
     // 3. 把回應轉成 JSON 格式的 JavaScript 陣列
     const data = await response.json()
@@ -25,27 +26,24 @@ const getProducts = async () =>{
   }
 };//end const getproducts
 
-//發送商品函式
-const addProduct = async() =>{
+//發送商品函式，會接收一個 "productData" 參數
+const addProduct = async(productData) =>{
+  // productData 就是子元件傳來的 { name: '...', price: ... }
 
-  if(!newProductName) return alert('請輸入名稱');
-  
   // 使用 fetch 發送 POST 請求
   const response = await fetch('http://localhost:3000/api/products', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     // 將變數轉成 JSON 字串寄出去
-    body:JSON.stringify({
-      name: newProductName.value,
-      price: newProductPrice.value
-    }) 
+    body:JSON.stringify(productData) // 直接把整包資料送給後端
   });
 
   if(response.ok){
-    alert('上架成功');
-    newProductName.value = ''; // 清空欄位
-    newProductPrice.value = '0';
-    getProducts(); // 重新抓取資料庫，讓畫面出現新商品
+    //稍微等一下，確保資料庫存好了
+    setTimeout(() =>{
+      alert('上架成功');
+      getProducts();// 重新抓取資料庫，讓畫面出現新商品
+    }, 100) 
   };
 };//end const addProduct
 
@@ -68,35 +66,35 @@ const deleteProduct = async(id) => {
 // 5. 網頁一載入就跑 getProducts
 onMounted(getProducts)
 
-//定義一個處理點擊的函式
-const handleAdd =(name) =>{
-  // 在這裡，JavaScript 可以直接存取瀏覽器的 alert
-  alert('add:' + name);
-};
-
 </script>
 
 <template>
-  <div class='app'>
-    <h1>e-shop</h1>
+  <div class="min-h-screen bg-gray-50 font-sans p-8">
 
-    <div class = 'product-container'>
-      <div v-for= "item in products" :key="item.id" class= "card">
-        <img :src= "item.image" alt= "picture">
-        <h3>{{item.name}}</h3>
-        <p>NT$ {{item.price}}</p>
-        <button @click="handleAdd(item.name)">add</button>
-        <button @click="deleteProduct(item.id)" style="color: red;">delete</button>
+    <header class="bg-white shadow-sm sticky top-0 z-10 border-b border-gary-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex item-center justify-between">
+        <h1 class="text-1xl font-blod flex items-center gap-2 text-gray-800">e-shop</h1>
       </div>
-    </div>
-  </div>
 
-  <div class="add-form">
-    <h2>上架新商品</h2>
-    <input v-model="newProductName" placeholder="商品名稱">
-    <input v-model.number="newProductPrice" type="number" placeholder="價格">
-    <button @click="addProduct">確認上架</button>
-  </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+      <AddProductForm @submit-product="addProduct" />
+
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 p-6">
+        <ProductCard 
+          v-for="item in products"
+          :key="item.id"
+          :product="item"
+          @click-delete="deleteProduct"
+        />
+      </div>
+    
+
+    </main>
+    
+  </div>  
 
 </template>
 
@@ -130,13 +128,3 @@ onMounted(() => {
   fetchData()
 })//end onMounted
 **/
-
-<!-- <template>
-  <div style="text-align: center; margin-top: 50px;">
-    <h1>我的購物網站</h1>
-    <div style="padding: 20px; border: 1px solid #ccc;">
-      <h3>後端回傳：</h3>
-      <p style="color: blue; font-size: 20px;">{{ message }}</p>
-    </div>
-  </div>
-</template> -->

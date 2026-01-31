@@ -58,10 +58,39 @@ const deleteProduct = async(id) => {
   });
 
   if(response.ok){
+    alert('刪除成功');
     // 刪除成功後，重新抓取清單更新畫面
     getProducts();
   };
 };//end const deleteProduct
+
+//修改商品函式
+const updateProduct = async(product) => {
+  try{
+    // product 是子元件傳上來的物件: { id: 1, name: '新名字', price: 100 }
+    const response = await fetch(`http://localhost:3000/api/products/${product.id}`,{
+      method: 'PUT', // 告訴後端：我要修改！
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        name: product.name,
+        price: product.price,
+        description: product.description,
+      })
+    });
+
+    if(response.ok) {
+      // 修改成功後，稍微等一下再重抓，確保資料庫更新完畢
+      setTimeout(() => {
+        alert('更新成功');
+        getProducts();
+      }, 100);
+    };
+
+  }catch(error){
+    console.error("更新失敗:", error)
+  }
+};//end const updateProduct
+
 
 // 5. 網頁一載入就跑 getProducts
 onMounted(getProducts)
@@ -88,6 +117,7 @@ onMounted(getProducts)
           :key="item.id"
           :product="item"
           @click-delete="deleteProduct"
+          @submit-edit="updateProduct"
         />
       </div>
     

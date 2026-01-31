@@ -7,6 +7,8 @@ const port = 3000; //定義一個「門牌號碼」
 
 //告訴伺服器：允許所有人來敲門（開發階段先全開）
 app.use(cors());
+// 告訴後端：如果有人傳 JSON 資料過來，請幫我解析成 JavaScript 物件
+app.use(express.json());
 
 // 建立資料庫連線
 // 這行會在 backend 資料夾下建立一個名為 shop.db 的檔案
@@ -26,16 +28,14 @@ db.serialize(() =>{
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         price INTEGER,
+        description TEXT,
         image TEXT
     )`);
 
-    // 檢查表裡有沒有資料，如果空空的，我們就塞入幾筆初始商品
+    // 檢查表裡有沒有資料
     db.get("SELECT count(*) as count FROM products", (err, row) =>{
         if(row.count ===0){
             console.log('no products');
-            const insert = 'INSERT INTO products (name, price, image) VALUES (?,?,?)';
-            db.run(insert,['資料庫筆記本', 250, 'https://picsum.photos/200/200?random=10']);
-            db.run(insert,['資料庫原子筆', 50, 'https://picsum.photos/200/200?random=11']);
         }
     });
 });
@@ -56,18 +56,15 @@ app.get('/api/products', (req,res)=> {
     });  
 });
 
-// 告訴後端：如果有人傳 JSON 資料過來，請幫我解析成 JavaScript 物件
-app.use(express.json());
-
 // 注意這裡用的是 .post，代表我們要「新增」資料
 app.post('/api/products', (req,res) =>{
     // 1. 從 req.body 中拿出前端傳來的 name 和 price
-    const {name, price} = req.body;
+    const {name, price, description} = req.body;
     // 2. 隨機生成一張圖片網址（讓畫面好看一點）
     const image = `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 1000)}`;
     // 3. 準備 SQL 指令：插入資料
-    const sql = 'INSERT INTO products(name, price, image) VALUES(?, ?, ?)';
-    const params = [name, price, image];
+    const sql = 'INSERT INTO products(name, price, description, image) VALUES(?, ?, ?, ?)';
+    const params = [name, price, description, image];
 
     // 4. 執行存檔
     db.run(sql, params, function(err){
@@ -79,6 +76,7 @@ app.post('/api/products', (req,res) =>{
             id: this.lastID, // 這是資料庫自動生成的編號
             name,
             price,
+            description,
             image
         });
     });
@@ -101,6 +99,24 @@ app.delete('/api/products/:id', (req,res) => {
         res.json({"message":"deleted", changes: this.changes });
     });
 });
+
+// 修改商品 (Update)
+// 動詞用 PUT，代表「更新資源」
+app.put('/api/products/:id', (req, res) =>{
+    const id = req.params.id;
+    const {name, price, description} = req.body; // 從包裹裡拿出新的名字和價格
+
+    // SQL 更新語法：UPDATE [表名] SET [欄位] = [新值] WHERE [條件]
+    const sql = 'UPDATE products SET name = ?, price = ? , description= ? WHERE id = ?';
+
+    db.run(sql, [name, price, description,id], function(err){
+        if(err){
+            return res.status(400).json({error:err.message});
+        }
+        res.json({message:"update", changes: this.changes});
+    });
+});
+
 
 
 //設定一個簡單的路由：當有人拜訪首頁 (/) 時做什麼

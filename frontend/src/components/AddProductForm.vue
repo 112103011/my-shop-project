@@ -4,9 +4,10 @@ import {ref} from 'vue'
 // 定義發送訊號的工具
 const emit = defineEmits(['submit-product'])
 
-// 1. 變數直接在這裡定義，App.vue 不需要知道這兩個暫存變數
+// 1. 變數直接在這裡定義，App.vue 不需要知道這個暫存變數
 const localName = ref('')
 const localPrice = ref('')
+const localDescription = ref('')
 // 2. 處理點擊事件
 const handleSubmit = () => {
     // 防呆：如果沒填東西就不送出
@@ -15,12 +16,14 @@ const handleSubmit = () => {
     // 發送訊號給爸爸 (App.vue)，把資料包成一個物件傳出去
     emit('submit-product',{
         name: localName.value,
-        price: localPrice.value
+        price: localPrice.value,
+        description: localDescription.value
     })
 
     // 清空表單
     localName.value = ''
     localPrice.value = ''
+    localDescription.value =''
 }
 </script>
 
@@ -41,6 +44,14 @@ const handleSubmit = () => {
                        type="number"
                        placeholder="請輸入商品價格"
                        class="w-full border-gray-300 border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm">
+            </div>
+
+            <div class="flex-1">
+                <textarea v-model="localDescription" 
+                          placeholder="請輸入商品敘述" 
+                          rows="2"
+                          class="w-full border-gray-300 border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none">
+                </textarea>
             </div>
 
             <div class="flex flex-col sm:flex-row gap-4">

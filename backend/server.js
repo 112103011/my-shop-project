@@ -56,6 +56,29 @@ app.get('/api/products', (req,res)=> {
     });  
 });
 
+//根據 ID 取得單一商品
+// :id 代表這是一個變數 (例如 1, 2, 100...)
+app.get('/api/products/:id', (req, res) => {
+    // 1. 抓取網址上的 id 參數
+    const id = req.params.id;
+    // 2. SQL 語法：只找 id 符合的那一筆
+    const sql = 'SELECT * FROM products WHERE id = ?';
+    // 3. 執行搜尋
+    db.get(sql, [id], (err,row) => {
+        if(err){
+            // 如果資料庫出錯 (例如語法錯誤)
+            return res.status(400).json({error: err.message});
+        }
+        if(!row){
+            // 如果找不到這個商品 (row 會是 undefined)
+            return res.status(404).json({error: '找不到商品'});
+        }
+        // 4. 成功找到，回傳該商品資料
+        res.json(row);
+    });
+
+});
+
 // 注意這裡用的是 .post，代表我們要「新增」資料
 app.post('/api/products', (req,res) =>{
     // 1. 從 req.body 中拿出前端傳來的 name 和 price

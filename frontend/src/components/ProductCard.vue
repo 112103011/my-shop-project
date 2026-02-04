@@ -1,7 +1,8 @@
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
-// 1. 定義「插槽」：接收從外面傳進來的商品資料
+// 定義「插槽」：接收從外面傳進來的商品資料
 const props = defineProps({
     product: Object, // 規定傳進來的必須是一個物件
     // 接收一個 isAdmin，預設是 false (客人模式)
@@ -9,15 +10,17 @@ const props = defineProps({
         type: Boolean,
         default: false
     }
-})
-// 2. 定義「訊號」：告訴父元件我要觸發什麼事件：刪除、修改
-const emit = defineEmits(['click-delete', 'submit-edit'])
+});
+// 建立 router 實體
+const router = useRouter();
+// 定義「訊號」：告訴父元件我要觸發什麼事件：刪除、修改
+const emit = defineEmits(['click-delete', 'submit-edit']);
 
 // --- 編輯模式的邏輯 ---
-const isEditing = ref(false) // 狀態開關：預設是「關」(顯示模式)
-const editName = ref('') // 暫存修改的名字
-const editPrice = ref('') // 暫存修改的價格
-const editDescription = ref('') // 暫存修改的敘述
+const isEditing = ref(false); // 狀態開關：預設是「關」(顯示模式)
+const editName = ref(''); // 暫存修改的名字
+const editPrice = ref(''); // 暫存修改的價格
+const editDescription = ref(''); // 暫存修改的敘述
 
 // 進入編輯模式
 const startEdit = () =>{
@@ -27,12 +30,12 @@ const startEdit = () =>{
     editDescription.value = props.product.description || ''
     // 打開開關，畫面會變身
     isEditing.value = true
-}
+};
 
 // 取消編輯
 const cancelEdit = () =>{
     isEditing.value = false // 關掉開關，變回原本樣子
-}
+};
 
 // 儲存編輯
 const saveEdit = () =>{
@@ -44,17 +47,26 @@ const saveEdit = () =>{
         description: editDescription.value
     })
     isEditing.value = false // 關掉開關
-}
+};
 
 // 當刪除按鈕被按下，發送訊號並附帶 ID
 const handleDelete = () => {
     emit('click-delete', props.product.id)
-}
+};
+
+//跳轉函式
+const gotoDetail = () => {
+    // 如果是管理員，或者是正在編輯中，就不跳轉 (方便操作)
+    if(props.isAdmin || props.isEditing) return;
+
+    // 跳轉到詳情頁，帶上商品 ID
+    router.push(`/product/${props.product.id}`)
+};
 </script>
 
 <template>
     
-    <div class= "bg-white rounded-x1 shadow-md overflow-hidden hover:shadow-x1 transition-shadow duration-300">
+    <div @click="gotoDetail" class= "bg-white rounded-x1 shadow-md overflow-hidden hover:shadow-x1 transition-shadow duration-300">
         
 
         <div class="h-35 overflow-hidden relative">

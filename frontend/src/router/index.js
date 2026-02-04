@@ -6,6 +6,7 @@ import{createRouter, createWebHistory} from 'vue-router';
 //    注意路徑：../ 代表上一層資料夾
 import ShopView from '../views/ShopView.vue';
 import AdminView from '../views/AdminView.vue';
+import ProductDetail from '../views/ProductDetail.vue';
 
 // 3. 開始建立路由器
 const router = createRouter({
@@ -24,6 +25,11 @@ const router = createRouter({
             path:'/admin',
             name:'admin',
             component: AdminView
+        },
+        {
+            path:'/product/:id',
+            name:'product-detail',
+            component: ProductDetail
         },
     ]
 

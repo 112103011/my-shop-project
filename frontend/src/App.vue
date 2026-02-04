@@ -12,4 +12,6 @@ import { RouterView } from 'vue-router';
 
   <RouterView></RouterView>
 
+  <footer class="bg-gray-800 text-white p-16 flex "> test</footer>
+
 </template>

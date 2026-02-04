@@ -125,6 +125,10 @@ onMounted(getProducts)
           @submit-edit="updateProduct"
         />
       </div>
+
+      <div v-if="products.length === 0" class="text-center text-gray-400 py-20">
+            沒有上架商品 
+      </div>
     
 
     </main>

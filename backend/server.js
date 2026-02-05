@@ -1,6 +1,9 @@
 const express = require('express'); //引入 express 套件
 const cors = require('cors'); //引入 cors 套件
 const sqlite3 = require('sqlite3').verbose();// 引入 sqlite3 套件，並開啟 verbose (冗長) 模式，可以讓錯誤訊息更詳細
+//引入加密與 Token 套件
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const app = express(); //引入剛剛安裝的 express 工具
 const port = 3000; //定義一個「門牌號碼」
@@ -32,11 +35,92 @@ db.serialize(() =>{
         image TEXT
     )`);
 
+    //建立使用者表格
+    db.run(`CREATE TABLE IF NOT EXISTS users(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE, 
+        password TEXT,
+        role TEXT DEFAULT 'user'        
+    )`);
+
     // 檢查表裡有沒有資料
     db.get("SELECT count(*) as count FROM products", (err, row) =>{
         if(row.count ===0){
             console.log('no products');
         }
+    });
+});
+
+//註冊 API (POST)
+app.post('/api/register', (req, res) =>{
+    // 1. 從前端傳來的包裹中，拿出帳號和密碼
+    const {username, password} = req.body;
+    // 2. 基本檢查：如果沒填就報錯
+    if(!username || !password){
+        return res.status(400).json({error: '請輸入帳號與密碼'});
+    };
+    // 3. 關鍵步驟：密碼加密 
+    // 我們絕對不能存明碼 (例如 "123456")，萬一資料庫被盜就慘了。
+    // bcrypt.hashSync 就像一台「碎紙機」，把密碼攪碎成一串亂碼。
+    // 10 是攪碎的強度 (Salt rounds)，數字越大越安全，但也越慢。
+    const hashedPassword = bcrypt.hashSync(password, 10);
+
+    // 4. 準備存入資料庫
+    // 為了測試方便，我們把所有註冊的人都暫時設為 'admin' (管理員)
+    // 等之後功能做完，我們再改回 'user'
+    const role = 'admin';
+    const sql = 'INSERT INTO users (username, password, role) VALUES (?, ?, ?)';
+
+    // 5. 執行存檔
+    db.run(sql, [username, hashedPassword, role], function(err){
+        if(err){
+            // 如果報錯包含 "UNIQUE"，代表帳號已經有人用了
+            if(err.message.includes('UNIQUE')){
+                return res.status(400).json({error: '這個名稱已經被使用過了！'});
+            }
+            return res.status(500).json({error: err.message});
+        }
+        // 6. 成功！回傳成功訊息
+        res.json({message: '註冊成功！', id: this.lastID});
+    });
+});
+
+//登入 API (POST)
+app.post('/api/login', (req, res) =>{
+    const {username, password} = req.body;
+    // 1. 基本檢查
+    if(!username || !password){
+        return res.status(400).json({error: '請輸入帳號與密碼'});
+    };
+    // 2. 去資料庫找這個人
+    const sql = 'SELECT * FROM users WHERE username = ?';
+    db.get(sql, [username], (err, user) =>{
+        if(err) return res.status(500).json({error: err.message});
+        // 3. 如果找不到這個帳號
+        if(!user){
+            return res.status(401).json({error:'帳號或密碼錯誤'});
+        };
+        // 4. 驗證密碼
+        // bcrypt.compareSync 會幫我們比對：
+        // "使用者輸入的密碼" (明碼) vs "資料庫裡的亂碼" (Hash)
+        const passwordIsValid = bcrypt.compareSync(password, user.password);
+        if(!passwordIsValid){
+            return res.status(401).json({error: '帳號或密碼錯誤'});
+        };
+        // 5. 發通行證 (JWT)
+        // jwt.sign(內容, 密鑰, 過期時間)
+        // 這裡我們把 id, username, role 寫進通行證裡
+        const token = jwt.sign(
+            {id:user.id, username: user.username, role: user.role},
+            'MY_SECRET_KEY', // ⚠️ 密鑰：實務上應該放在環境變數，這裡先隨便寫
+            {expiresIn: '24h'} // 這張證件 24 小時後過期
+        );
+        // 6. 回傳 token 和使用者資料給前端
+        res.json({
+            message: '登入成功',
+            token: token,
+            user: {id: user.id, username: user.username, role: user.role}
+        });
     });
 });
 

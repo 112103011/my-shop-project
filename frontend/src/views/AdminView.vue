@@ -32,10 +32,19 @@ const addProduct = async(productData) =>{
 
   if(!confirm('確定上架？')) return; // 彈出視窗確認
 
+  // 一定要重新從口袋拿一次 Token！
+  const token = localStorage.getItem('token');
+
   // 使用 fetch 發送 POST 請求
   const response = await fetch('http://localhost:3000/api/products', {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
+    headers: {
+      'Content-Type':'application/json',
+      //亮出通行證！
+      // 注意：'Bearer ' 後面有一個空白鍵，然後才是 token
+      'Authorization':`Bearer ${token}`
+    },
+    
     // 將變數轉成 JSON 字串寄出去
     body:JSON.stringify(productData) // 直接把整包資料送給後端
   });
@@ -54,9 +63,15 @@ const deleteProduct = async(id) => {
 
   if(!confirm('確定要刪除這個商品嗎？')) return; // 彈出視窗確認，防止誤刪
   
+  // 一定要重新從口袋拿一次 Token！
+  const token = localStorage.getItem('token');
+  
   //Fetch 請求：使用「反引號」組合網址
   const response = await fetch(`http://localhost:3000/api/products/${id}`, {
-    method: 'Delete'
+    method: 'Delete',
+    headers:{
+      'Authorization':`Bearer ${token}`
+    }
   });
 
   if(response.ok){
@@ -71,10 +86,16 @@ const updateProduct = async(product) => {
   try{
     if(!confirm('確定修改？')) return; // 彈出視窗確認，防止誤刪
 
+    // 一定要重新從口袋拿一次 Token！
+    const token = localStorage.getItem('token');
+
     // product 是子元件傳上來的物件: { id: 1, name: '新名字', price: 100 }
     const response = await fetch(`http://localhost:3000/api/products/${product.id}`,{
       method: 'PUT', // 告訴後端：我要修改！
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization':`Bearer ${token}`
+      },
       body: JSON.stringify({
         name: product.name,
         price: product.price,

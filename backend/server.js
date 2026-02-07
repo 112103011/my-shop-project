@@ -124,6 +124,39 @@ app.post('/api/login', (req, res) =>{
     });
 });
 
+//中介軟體
+/**
+req: 前端寄來的信 (包含 header, body 等)
+res: 我們要回給前端的信
+next: 關鍵！這是一個函式，呼叫它代表「放行，去下一關」**/
+const authenticateToken = (req, res, next) =>{
+    // 1. 從信封的標頭 (Headers) 拿出 Authorization 欄位
+    // 前端通常會這樣傳： "Bearer <亂碼Token>"
+    const authHeader = req.headers['authorization'];
+    // 2. 切割字串，只拿出 <亂碼Token> 的部分
+    // 如果 authHeader 是 undefined (沒帶證件)，token 就會是 undefined
+    const token = authHeader &&authHeader.split(' ')[1];
+    // 3. 第一關檢查：如果根本沒帶 Token
+    if(token == null){
+        console.log('被攔截：沒有 Token');
+        return res.sendStatus(401); // 401: Unauthorized (未授權)
+    };
+    // 4. 第二關檢查：有帶 Token，但檢查是不是偽造的或過期的
+    // jwt.verify(通行證, 密鑰, 驗證後的動作)
+    jwt.verify(token, 'MY_SECRET_KEY', (err, user) =>{
+        if(err){
+            console.log('被攔截：Token 無效或過期');
+            return res.sendStatus(403); // 403: Forbidden (禁止進入)
+        };
+        // 5. 驗證通過！
+        // 把解碼出來的使用者資料 (id, username, role) 掛在 req 上面
+        // 這樣後面的 API 就可以知道「現在是誰在操作」
+        req.user = user;
+        // 6. 放行！前往下一個步驟 (原本的 API)
+        next();
+    });
+};
+
 // 定義一個新的路徑 /api/products，讓它去資料庫「撈貨」
 app.get('/api/products', (req,res)=> {
     // SQL 語法：SELECT * FROM products 代表「選取 products 表裡面的所有欄位」
@@ -164,7 +197,7 @@ app.get('/api/products/:id', (req, res) => {
 });
 
 // 注意這裡用的是 .post，代表我們要「新增」資料
-app.post('/api/products', (req,res) =>{
+app.post('/api/products', authenticateToken, (req,res) =>{
     // 1. 從 req.body 中拿出前端傳來的 name 和 price
     const {name, price, description} = req.body;
     // 2. 隨機生成一張圖片網址（讓畫面好看一點）
@@ -192,7 +225,7 @@ app.post('/api/products', (req,res) =>{
 
 // DELETE 方法代表「刪除」
 // :id 是一個動態參數，代表前端會傳入商品的編號
-app.delete('/api/products/:id', (req,res) => {
+app.delete('/api/products/:id', authenticateToken, (req,res) => {
     const id = req.params.id; // 取得 URL 網址上的 id
     //SQL 語法：DELETE FROM [表名] WHERE [條件]
     const sql = 'DELETE FROM products WHERE id = ?';
@@ -209,7 +242,7 @@ app.delete('/api/products/:id', (req,res) => {
 
 // 修改商品 (Update)
 // 動詞用 PUT，代表「更新資源」
-app.put('/api/products/:id', (req, res) =>{
+app.put('/api/products/:id', authenticateToken, (req, res) =>{
     const id = req.params.id;
     const {name, price, description} = req.body; // 從包裹裡拿出新的名字和價格
 

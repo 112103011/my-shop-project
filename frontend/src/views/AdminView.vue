@@ -13,7 +13,7 @@ const getProducts = async () =>{
     // 2. 使用 fetch 去抓新的網址 /api/products
     // 技巧：在網址後面加上 "?t=" 和現在的時間
     // 這樣每次網址都不一樣，瀏覽器就不會偷懶讀舊資料了
-    const response = await fetch('http://localhost:3000/api/products?t={new Date().getTime()}')
+    const response = await fetch(`http://localhost:3000/api/products?t=${new Date().getTime()}`)
 
     // 3. 把回應轉成 JSON 格式的 JavaScript 陣列
     const data = await response.json()
@@ -89,18 +89,31 @@ const updateProduct = async(product) => {
     // 一定要重新從口袋拿一次 Token！
     const token = localStorage.getItem('token');
 
+    // 準備一個空箱子
+    const formData = new FormData;
+    // 把文字資料丟進箱子
+    // append(標籤名, 內容)
+    formData.append('name', product.name);
+    formData.append('price', product.price);
+    formData.append('description', product.description);
+    // 關鍵判斷：使用者到底有沒有換圖片？
+    // product.file 是在 ProductCard 裡透過 <input type="file"> 抓到的檔案
+    if(product.file){
+      // A. 如果有選新檔案 -> 把檔案丟進箱子
+      // 後端看到這個 'file' 就知道要處理上傳了
+      formData.append('file', product.file);
+    }else{
+      // B. 如果沒選新檔案 -> 把舊的網址字串丟進去繼續用舊的
+      formData.append('image', product.image);
+    };
+
     // product 是子元件傳上來的物件: { id: 1, name: '新名字', price: 100 }
     const response = await fetch(`http://localhost:3000/api/products/${product.id}`,{
       method: 'PUT', // 告訴後端：我要修改！
       headers: {
-        'Content-Type': 'application/json',
         'Authorization':`Bearer ${token}`
       },
-      body: JSON.stringify({
-        name: product.name,
-        price: product.price,
-        description: product.description,
-      })
+      body: formData
     });
 
     if(response.ok) {
@@ -115,7 +128,6 @@ const updateProduct = async(product) => {
     console.error("更新失敗:", error)
   }
 };//end const updateProduct
-
 
 // 5. 網頁一載入就跑 getProducts
 onMounted(getProducts)

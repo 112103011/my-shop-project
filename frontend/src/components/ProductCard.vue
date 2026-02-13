@@ -21,15 +21,39 @@ const isEditing = ref(false); // 狀態開關：預設是「關」(顯示模式)
 const editName = ref(''); // 暫存修改的名字
 const editPrice = ref(''); // 暫存修改的價格
 const editDescription = ref(''); // 暫存修改的敘述
+const editFile = ref(''); //暫存新選的檔案
+const editImagePreview = ref(''); //暫存預覽圖的網址
 
 // 進入編輯模式
 const startEdit = () =>{
     // 把原本的資料，複製一份到暫存區
-    editName.value = props.product.name
-    editPrice.value = props.product.price
-    editDescription.value = props.product.description || ''
+    editName.value = props.product.name;
+    editPrice.value = props.product.price;
+    editDescription.value = props.product.description || '';
+    editFile.value = null;
+    editImagePreview.value = props.product.image; 
     // 打開開關，畫面會變身
-    isEditing.value = true
+    isEditing.value = true;
+};
+
+const handleFileChange = (event) =>{
+    const file = event.target.files[0];
+    if(!file) return;
+
+    // 1. 存起檔案 (等一下要寄給後端)
+    editFile.value = file;
+    // 2. 製作本機預覽圖 (讓使用者馬上看到變更)
+    // URL.createObjectURL 可以把檔案暫時變成一個網址
+    editImagePreview.value = URL.createObjectURL(file);
+};
+
+//移除圖片函式
+const removeImage = () =>{
+    // 1. 清空選到的檔案 (如果有選的話)
+    editFile.value = null;
+    // 2. 清空預覽圖 -> 變成空字串
+    // 這樣存檔時，就會把空字串傳給後端，後端就會換成預設圖
+    editImagePreview.value = '';
 };
 
 // 取消編輯
@@ -39,13 +63,20 @@ const cancelEdit = () =>{
 
 // 儲存編輯
 const saveEdit = () =>{
+    let finalImageToSend = props.product.image; // 預設：維持原樣
+    if(editImagePreview.value === ''){ 
+        finalImageToSend = '';// 使用者刪掉了
+    };
+
     // 發送訊號給 (App.vue)，把 ID 和新的資料傳出去
     emit('submit-edit',{
         id: props.product.id,
         name: editName.value,
         price: editPrice.value,
-        description: editDescription.value
-    })
+        description: editDescription.value,
+        image: finalImageToSend, // 傳送判斷後的結果
+        file: editFile.value
+    });
     isEditing.value = false // 關掉開關
 };
 
@@ -71,7 +102,28 @@ const gotoDetail = () => {
 
         <div class="h-35 overflow-hidden relative">
 
-            <img :src= "product.image" alt= "picture" class="w-full h-48 object-cover">
+            <template v-if="isEditing">
+                 <img v-if="editImagePreview" 
+                     :src="editImagePreview" 
+                     class="w-full h-full object-cover opacity-60" 
+                     alt="編輯預覽">
+                
+                <div v-else class="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                    (圖片已移除)
+                </div>
+
+                <button v-if="editImagePreview"
+                        @click.stop="removeImage"
+                        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-500 text-white p-2 rounded-full shadow hover:bg-red-600 z-20"
+                        title="移除這張圖片">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                </button>
+
+            </template>
+
+            <img v-else :src="product.image || 'https://placehold.co/300x300'" alt="picture" class="w-full h-48 object-cover">
 
             <button v-if="isAdmin && !isEditing" @click="startEdit"
                     class="absolute top-2 right-2 z-10 bg-white/90 p-2 rounded-full shadow-md hover:bg-blue-500 hover:text-white transition-colors cursor-pointer text-gray-600">
@@ -84,6 +136,15 @@ const gotoDetail = () => {
         <div class= "p-3 flex flex-col flex-1">
 
             <div v-if="isEditing" class="flex flex-col gap-3">
+                <div>
+                    <p class="text-xs text-gray-500 mt-1 mb-1">更換圖片</p>
+                    <input type="file"
+                           accept="image/*"
+                           @change="handleFileChange"
+                           class="w-full text-sm text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    >
+                </div>
+
                 <p class="text-xs text-gray-500 mt-1 line-clamp-2 h-4 leading-4">名稱</p>
                 <input v-model="editName" class="border rounded p-1 text-sm w-full focus:ring-2 focus:ring-blue-500 outline-none">
                 <p class="text-xs text-gray-500 mt-1 line-clamp-2 h-4 leading-4">價格</p>

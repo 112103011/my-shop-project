@@ -1,9 +1,11 @@
 const express = require('express'); //引入 express 套件
 const cors = require('cors'); //引入 cors 套件
 const sqlite3 = require('sqlite3').verbose();// 引入 sqlite3 套件，並開啟 verbose (冗長) 模式，可以讓錯誤訊息更詳細
-//引入加密與 Token 套件
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs'); // 引入加密
+const jwt = require('jsonwebtoken'); // Token 套件
+const multer = require('multer'); // 負責處理檔案上傳
+const path = require('path'); // 負責處理路徑 (Windows/Mac 通用)
+const { url } = require('inspector');
 
 const app = express(); //引入剛剛安裝的 express 工具
 const port = 3000; //定義一個「門牌號碼」
@@ -12,6 +14,9 @@ const port = 3000; //定義一個「門牌號碼」
 app.use(cors());
 // 告訴後端：如果有人傳 JSON 資料過來，請幫我解析成 JavaScript 物件
 app.use(express.json());
+// 讓外部可以透過網址讀取 uploads 資料夾裡的圖片
+// 如果有請求是 '/uploads' 開頭的，就去讀取 'uploads' 資料夾的檔案
+app.use('/uploads', express.static('uploads'));
 
 // 建立資料庫連線
 // 這行會在 backend 資料夾下建立一個名為 shop.db 的檔案
@@ -22,6 +27,25 @@ const db = new sqlite3.Database('./shop.db', (err) =>{
         console.log('---connect sqlite (shop.db)---');
     }
 });
+
+//設定 Multer 的存放規則
+const storageRule = multer.diskStorage({
+    // 1. 設定儲存目的地
+    destination: (req, file, cb) => {
+        // 用法: cb(錯誤, 成功結果)
+        cb(null, 'uploads/'); // (null=沒錯誤), 把檔案丟到 backend/uploads/
+    },
+    // 2. 設定檔案命名規則
+    filename: (req, file, cb) => {
+        // file.originalname 是原始檔名 (例如: dog.png)
+        // Date.now() 是現在的時間 (毫秒)
+        // 組合起來變成: 1770492493-dog.png (保證不重複)
+        cb(null, Date.now() + '-' + file.originalname);
+    }
+});
+
+// 建立上傳物件 (我們會用這個 uploadPhoto 變數來當守衛)
+const uploadPhoto = multer({storage: storageRule});
 
 //初始化資料庫內容
 //serialize(序列化)
@@ -196,15 +220,33 @@ app.get('/api/products/:id', (req, res) => {
 
 });
 
+// 圖片上傳 API
+// upload.single('file'): 這是 Multer 的守衛，它會只接收欄位名稱為 'file' 的單一檔案
+app.post('/api/upload', authenticateToken, uploadPhoto.single('file'), (req, res) => {
+    // 1. 如果沒收到檔案
+    if(!req.file){
+        return res.status(400).json({message: '請選擇檔案'});
+    };
+    // 2. 如果成功，Multer 會把檔案資訊放在 req.file 裡
+    // 我們要回傳「圖片的網址」給前端
+    // 網址格式: http://localhost:3000/uploads/檔名
+    const imageUrl = `http://localhost:3000/uploads/${req.file.filename}`;
+
+    res.json({
+        message: '上傳成功',
+        url: imageUrl
+    });
+});
+
 // 注意這裡用的是 .post，代表我們要「新增」資料
 app.post('/api/products', authenticateToken, (req,res) =>{
     // 1. 從 req.body 中拿出前端傳來的 name 和 price
-    const {name, price, description} = req.body;
-    // 2. 隨機生成一張圖片網址（讓畫面好看一點）
-    const image = `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 1000)}`;
+    const {name, price, description, image} = req.body;
+    // 2. 圖片
+    const finalImage = image || 'https://placehold.co/300x300';
     // 3. 準備 SQL 指令：插入資料
     const sql = 'INSERT INTO products(name, price, description, image) VALUES(?, ?, ?, ?)';
-    const params = [name, price, description, image];
+    const params = [name, price, description, finalImage];
 
     // 4. 執行存檔
     db.run(sql, params, function(err){
@@ -217,7 +259,7 @@ app.post('/api/products', authenticateToken, (req,res) =>{
             name,
             price,
             description,
-            image
+            finalImage
         });
     });
 
@@ -242,18 +284,37 @@ app.delete('/api/products/:id', authenticateToken, (req,res) => {
 
 // 修改商品 (Update)
 // 動詞用 PUT，代表「更新資源」
-app.put('/api/products/:id', authenticateToken, (req, res) =>{
+app.put('/api/products/:id', authenticateToken, uploadPhoto.single('file'), (req, res) =>{
     const id = req.params.id;
-    const {name, price, description} = req.body; // 從包裹裡拿出新的名字和價格
+    const {name, price, description, image} = req.body; // 從包裹裡拿出新的名字和價格
+
+    let finalImage = image || 'https://placehold.co/300x300'; // 預設使用前端傳回來的「舊圖片網址」
+    // 如果 req.file 存在，代表使用者這次有上傳「新圖片」
+    if(req.file){
+        finalImage = `http://localhost:3000/uploads/${req.file.filename}`;
+    };
 
     // SQL 更新語法：UPDATE [表名] SET [欄位] = [新值] WHERE [條件]
-    const sql = 'UPDATE products SET name = ?, price = ? , description= ? WHERE id = ?';
+    const sql = 'UPDATE products SET name = ?, price = ?, description= ?, image= ? WHERE id = ?';
 
-    db.run(sql, [name, price, description,id], function(err){
+    db.run(sql, [name, price, description, finalImage, id], function(err){
         if(err){
             return res.status(400).json({error:err.message});
-        }
-        res.json({message:"update", changes: this.changes});
+        };
+        // 檢查有沒有真的更新到資料 (有可能 ID 不存在)
+        if(this.changes === 0){
+            return res.status(404).json({message: '找不到該商品'});
+        };
+        res.json({
+            message:"更新成功",
+            data:{
+                id: req.params.id,
+                name,
+                price,
+                description,
+                image: finalImage
+            }
+        });
     });
 });
 

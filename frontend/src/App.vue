@@ -30,28 +30,33 @@ const handleLogout = () =>{
 
 
 <template>
-  <nav class="bg-gray-800 text-white sticky top-0 z-50 py-2 h-16 flex gap-4">
-    <div class="flex justify-between items-center">
+  <nav class="bg-gray-800 text-white sticky top-0 z-50 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        
+      <div class="flex items-center gap-8">
+        <h1 class="text-xl font-bold tracking-wider">My Shop 🛍️</h1>
 
-      <div class="flex gap-6 items-center">
-        <h1 class="text-l font-bold m-2">My Shop</h1>
-        <RouterLink to="/" class="hover:text-blue-300 transition-colors">首頁</RouterLink>
-        <RouterLink to="/admin" class="hover:text-blue-300 transition-colors">進入後台</RouterLink>
+        <div class="hidden md:flex gap-6">
+          <RouterLink to="/" class="hover:text-blue-300 transition-colors font-medium">首頁</RouterLink>
+          <RouterLink to="/admin" class="hover:text-blue-300 transition-colors font-medium">後台管理</RouterLink>
+        </div>
+
       </div>
 
       <div>
-        <button v-if="isLoggedIn" @click="handleLogout" class="bg-red-500 hover:bg-red-600 px-4 py-2 m-4 rounded text-sm font-bold transition-colors">
-          登出
+        <button v-if="isLoggedIn" @click="handleLogout" 
+                class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm hover:shadow-md">
+                登出
         </button>
 
-        <RouterLink v-else to="/login" class="bg-red-500 hover:bg-red-600 px-4 py-2 m-4 rounded text-sm font-bold transition-colors">
-          登入
+        <RouterLink v-else to="/login" 
+                    class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm hover:shadow-md">
+                    登入 / 註冊
         </RouterLink>
       </div>
 
     </div>  
-
-  </nav>
+</nav>
 
   <RouterView></RouterView>
 

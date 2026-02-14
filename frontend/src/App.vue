@@ -39,6 +39,7 @@ const handleLogout = () =>{
         <div class="hidden md:flex gap-6">
           <RouterLink to="/" class="hover:text-blue-300 transition-colors font-medium">首頁</RouterLink>
           <RouterLink to="/admin" class="hover:text-blue-300 transition-colors font-medium">後台管理</RouterLink>
+          <RouterLink to="/cart" class="hover:text-blue-300 transition-colors font-medium flex items-center gap-1">購物車 🛒</RouterLink>
         </div>
 
       </div>

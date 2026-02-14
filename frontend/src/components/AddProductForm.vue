@@ -19,11 +19,16 @@ const handleFileUpload = async (event) =>{
     // 2. 準備信封
     const formData = new FormData();
     formData.append('file', file);
+
+    const token = localStorage.getItem('token');
     
     try{
         // 3. 寄給後端
         const res = await fetch('http://localhost:3000/api/upload', {
             method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}` 
+            },
             body: formData
         });
         const data = await res.json();

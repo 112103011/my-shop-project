@@ -8,6 +8,7 @@ import ShopView from '../views/ShopView.vue';
 import AdminView from '../views/AdminView.vue';
 import ProductDetail from '../views/ProductDetail.vue';
 import LoginView from '../views/LoginView.vue';
+import CartView from '../views/CartView.vue';
 
 // 3. 開始建立路由器
 const router = createRouter({
@@ -19,7 +20,7 @@ const router = createRouter({
     routes:[
         {
             path:'/',            // 當網址是根目錄 (http://localhost:5173/)
-            name:'shop',         // 給這條路線取個名字叫 shop (方便以後程式呼叫)
+            name:'home',         // 給這條路線取個名字叫 home (方便以後程式呼叫)
             component: ShopView  // 就顯示 ShopView 這個組件
         },
         {
@@ -37,6 +38,11 @@ const router = createRouter({
             path:'/login',
             name: 'login',
             component: LoginView
+        },
+        {
+            path:'/cart',
+            name:'cart',
+            component:CartView
         },
     ]
 

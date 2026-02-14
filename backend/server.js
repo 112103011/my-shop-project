@@ -1,3 +1,9 @@
+require('dotenv').config();
+
+// process.env 就是「環境變數」的意思，後面接你在 .env 裡取的每一行的名字
+const MY_SECRET_KEY = process.env.JWT_SECRET; 
+const port = process.env.PORT || 3000; // 如果讀不到，預設用 3000
+
 const express = require('express'); //引入 express 套件
 const cors = require('cors'); //引入 cors 套件
 const sqlite3 = require('sqlite3').verbose();// 引入 sqlite3 套件，並開啟 verbose (冗長) 模式，可以讓錯誤訊息更詳細
@@ -8,7 +14,6 @@ const path = require('path'); // 負責處理路徑 (Windows/Mac 通用)
 const { url } = require('inspector');
 
 const app = express(); //引入剛剛安裝的 express 工具
-const port = 3000; //定義一個「門牌號碼」
 
 //告訴伺服器：允許所有人來敲門（開發階段先全開）
 app.use(cors());
@@ -136,8 +141,8 @@ app.post('/api/login', (req, res) =>{
         // 這裡我們把 id, username, role 寫進通行證裡
         const token = jwt.sign(
             {id:user.id, username: user.username, role: user.role},
-            'MY_SECRET_KEY', // ⚠️ 密鑰：實務上應該放在環境變數，這裡先隨便寫
-            {expiresIn: '24h'} // 這張證件 24 小時後過期
+            MY_SECRET_KEY, // 密鑰
+            {expiresIn: '1h'} // 這張證件1小時後過期
         );
         // 6. 回傳 token 和使用者資料給前端
         res.json({
@@ -167,7 +172,7 @@ const authenticateToken = (req, res, next) =>{
     };
     // 4. 第二關檢查：有帶 Token，但檢查是不是偽造的或過期的
     // jwt.verify(通行證, 密鑰, 驗證後的動作)
-    jwt.verify(token, 'MY_SECRET_KEY', (err, user) =>{
+    jwt.verify(token, MY_SECRET_KEY, (err, user) =>{
         if(err){
             console.log('被攔截：Token 無效或過期');
             return res.sendStatus(403); // 403: Forbidden (禁止進入)
@@ -239,7 +244,7 @@ app.post('/api/upload', authenticateToken, uploadPhoto.single('file'), (req, res
 });
 
 // 注意這裡用的是 .post，代表我們要「新增」資料
-app.post('/api/products', authenticateToken, (req,res) =>{
+app.post('/api/products', authenticateToken, uploadPhoto.single('file'), (req,res) =>{
     // 1. 從 req.body 中拿出前端傳來的 name 和 price
     const {name, price, description, image} = req.body;
     // 2. 圖片

@@ -17,6 +17,14 @@ const fetchProducts = async() =>{
 
 const handleAddToCart = (product) => {
     // product 就是子元件傳過來的那個商品物件 {id: 1, name: '...', price: 100}
+    
+    //先檢查有沒有登入
+    const token = localStorage.getItem('token');
+    if(!token){
+        alert('請先登入會員！');
+        return;
+    };
+
     // A. 把商品推入購物車陣列
     cart.value.push(product);
     // B. 存入 localStorage (瀏覽器的口袋)

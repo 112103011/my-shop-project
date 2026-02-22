@@ -7,6 +7,14 @@ const cart = ref([]);
 
 // 1. 讀取購物車資料
 onMounted(() => {
+    // 檢查：口袋裡有沒有 token？
+    const token = localStorage.getItem('token');
+    if(!token){
+        alert('請先登入會員，才能查看購物車喔！');
+        router.push('/login');
+        return; // 讓程式停在這裡，不要再往下執行了
+    };
+
     const savedCart = localStorage.getItem('my-cart');
     if(savedCart){
         cart.value = JSON.parse(savedCart);

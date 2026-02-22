@@ -39,8 +39,15 @@ const handleSubmit = async() =>{
             // 這樣重新整理網頁，登入狀態才不會不見
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
-            //跳轉回後台
-            router.push('/admin');
+            //把 role 單獨抽出來存，等一下讀取比較方便
+            localStorage.setItem('user_role', data.user.role);
+            //跳轉
+            if(data.user.role === 'admin'){
+                router.push('/admin'); 
+            }else{
+                router.push('/');
+            };
+            
         }else{ // 註冊成功
             alert('註冊成功！請重新登入');
             // 切換回登入模式，讓使用者登入

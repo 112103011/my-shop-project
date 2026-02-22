@@ -95,9 +95,8 @@ app.post('/api/register', (req, res) =>{
     const hashedPassword = bcrypt.hashSync(password, 10);
 
     // 4. 準備存入資料庫
-    // 為了測試方便，我們把所有註冊的人都暫時設為 'admin' (管理員)
-    // 等之後功能做完，我們再改回 'user'
-    const role = 'admin';
+    //如果填的帳號剛好是 'admin'，身分就是 'admin'，否則就是 'user'
+    const role = (username === 'admin') ? 'admin' : 'user';
     const sql = 'INSERT INTO users (username, password, role) VALUES (?, ?, ?)';
 
     // 5. 執行存檔

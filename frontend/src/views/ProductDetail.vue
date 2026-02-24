@@ -3,11 +3,14 @@ import {ref, onMounted} from 'vue';
 // useRoute: 用來"讀取"現在網址的資訊 (例如 id 是多少)
 // useRouter: 用來"控制"跳轉 (例如跳回首頁)
 import { useRoute, useRouter } from 'vue-router';
+import { useCart } from '../composables/useCart';
 
 const route = useRoute();
 const router = useRouter();
 const product = ref(null); // 用來放商品資料
 const loading = ref(true); // 載入狀態 (還沒抓到資料前顯示 Loading)
+const quantity = ref(1); //用來記錄使用者選了幾個 (預設是 1)
+const {addToCart} = useCart(); 
 
 onMounted(async () => {
     // 1. 從網址取得 ID
@@ -28,6 +31,21 @@ onMounted(async () => {
         loading.value = false; // 不管成功失敗，都要把 loading 關掉
     }
 });
+
+// 數量加減按鈕的邏輯
+const decreaseQty = () =>{
+    if(quantity.value > 1){
+        quantity.value --;
+    };
+};
+const increaseQty = () =>{
+    quantity.value ++;
+};
+
+onMounted(() => {
+  // fetchProduct();
+});
+
 </script>
 
 <template>
@@ -49,13 +67,30 @@ onMounted(async () => {
 
                 <div class="mt-auto">
                     <p class="text-xl font-bold text-orange-600 whitespace-pre-wrap leading-relaxed mb-6 flex-grow">NT$ {{ product.price }}</p>
+                    <span class="text-gray-600 font-medium">購買數量：</span>
+
+                    
 
                     <div class="flex gap-4">
-                        <button class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 transition-transform active:scale-95">
-                            立即購買
-                        </button>
-                        <button @click="router.push('/')" class="px-6 py-3 border border-gray-300 rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition-colors">
-                            回上一頁
+                        <div class="flex items-center gap-2 bg-gray-50 px-1 py-1 rounded-lg border border-gray-200">
+                        
+                            <button @click="decreaseQty" 
+                                    class="px-2 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold"
+                                    :class="{'opacity-50 cursor-not-allowed': quantity <= 1}">
+                                    -
+                            </button>
+      
+                            <span class="px-6 py-2 border-x border-gray-300 font-bold text-gray-700 bg-white">{{ quantity }}</span>
+      
+                            <button @click="increaseQty" 
+                                class="px-2 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold">
+                                +
+                            </button>
+                        </div>
+
+                        <button @click="addToCart(product, quantity)" 
+                                class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 transition-transform active:scale-95">
+                                加入購物車
                         </button>
                     </div>
 

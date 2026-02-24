@@ -68,6 +68,7 @@ const handleSubmit = () => {
         fileInput.value.value = '';
     };
 };
+
 </script>
 
 <template>
@@ -85,7 +86,9 @@ const handleSubmit = () => {
 
             <div class="w-full sm:w-48">
                 <input v-model="localPrice"
-                       type="number"
+                       type="text"
+                       inputmode="numeric"
+                       @input="localPrice = String(localPrice).replace(/[^0-9]/g, '')"
                        placeholder="請輸入商品價格"
                        class="w-full border-gray-300 border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm">
             </div>

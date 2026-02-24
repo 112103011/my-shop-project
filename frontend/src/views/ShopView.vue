@@ -1,9 +1,12 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import ProductCard from '../components/ProductCard.vue';
+import { useCart } from '../composables/useCart';
 
+const userRole = localStorage.getItem('user_role') || 'user'
 const products = ref([]);
 const cart = ref([]); //購物車變數：用來裝使用者選購的商品
+const {addToCart} = useCart(); 
 
 //跟後台很像，但這裡只要「讀取(GET)」就好
 const fetchProducts = async() =>{
@@ -15,26 +18,6 @@ const fetchProducts = async() =>{
     };
 };
 
-const handleAddToCart = (product) => {
-    // product 就是子元件傳過來的那個商品物件 {id: 1, name: '...', price: 100}
-    
-    //先檢查有沒有登入
-    const token = localStorage.getItem('token');
-    if(!token){
-        alert('請先登入會員！');
-        return;
-    };
-
-    // A. 把商品推入購物車陣列
-    cart.value.push(product);
-    // B. 存入 localStorage (瀏覽器的口袋)
-    // 因為 localStorage 只能存「字串」，所以要用 JSON.stringify 把陣列變字串
-    localStorage.setItem('my-cart', JSON.stringify(cart.value));
-    // C. 給使用者一點回饋
-    alert('已加入購物車！');
-    console.log('目前的購物車:', cart.value);
-};
-
 onMounted(() =>{
     fetchProducts();
     // D. 每次進來這個頁面，先檢查口袋裡有沒有上次沒結帳的東西
@@ -44,7 +27,6 @@ onMounted(() =>{
         cart.value = JSON.parse(savedCart);
     };
 });
-
 
 </script>
 
@@ -60,7 +42,8 @@ onMounted(() =>{
               v-for="item in products"
               :key="item.id"
               :product="item"
-              @add-to-cart="handleAddToCart"
+              :is-admin="userRole === 'admin'"
+              @add-to-cart="addToCart"
             />         
         </div>
 

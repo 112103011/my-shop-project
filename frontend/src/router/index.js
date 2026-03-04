@@ -9,6 +9,7 @@ import AdminView from '../views/AdminView.vue';
 import ProductDetail from '../views/ProductDetail.vue';
 import LoginView from '../views/LoginView.vue';
 import CartView from '../views/CartView.vue';
+import CheckoutView from '../views/CheckoutView.vue';
 
 // 3. 開始建立路由器
 const router = createRouter({
@@ -44,6 +45,12 @@ const router = createRouter({
             name:'cart',
             component:CartView
         },
+        {
+            path:'/checkout',
+            name:'checkout',
+            component: CheckoutView
+        },
+        
     ]
 
 });

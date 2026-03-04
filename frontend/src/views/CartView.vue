@@ -63,21 +63,6 @@ const removeFromCart = (index) => {
     // 同步更新 localStorage
     localStorage.setItem(cartKey.value, JSON.stringify(cart.value));
 };
-
-//結帳功能
-const checkout = () => {
-    if(cart.value.length === 0) return;
-
-    const confirmCheckout = confirm(`總金額是 NT$ ${totalPrice.value}，確定要結帳嗎？`);
-    if(confirmCheckout){
-        // 清空變數
-        cart.value = [];
-        // 清空 localStorage
-        localStorage.removeItem(cartKey.value);
-        alert('感謝您的購買！商品將儘速寄出 🚚');
-        router.push('/'); // 回首頁
-    };
-};
 </script>
 
 <template>
@@ -140,10 +125,13 @@ const checkout = () => {
                         總金額：<span class="text-3xl font-bold text-orange-600">NT$ {{ totalPrice }}</span>
                     </div>
 
-                    <button @click="checkout"
-                            class="w-full md:w-auto mt-4 md:mt-0 bg-orange-500 text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-600 shadow-lg active:scale-95 transition-all">
-                        前往結帳 💳
-                    </button>
+                    <div class="mt-8 flex justify-end">
+                        <RouterLink to="/checkout" 
+                                    class="bg-orange-500 text-white px-8 py-3 rounded-xl font-bold text-lg hover:bg-orange-600 shadow-md transition-colors">
+                                    前往結帳 ➡️
+                        </RouterLink>
+                    </div>
+
                 </div>
 
             </div>

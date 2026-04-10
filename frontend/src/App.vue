@@ -84,7 +84,7 @@ const handleLogout = () =>{
 
   <RouterView></RouterView>
 
-  <footer class="bg-gray-800 text-white p-16 flex "> test</footer>
+  <footer class="bg-gray-800 text-white p-16 flex "> </footer>
 
 </template>
 

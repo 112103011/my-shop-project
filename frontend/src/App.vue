@@ -61,7 +61,8 @@ const handleLogout = () =>{
         <div class="hidden md:flex gap-6">
           <RouterLink to="/" class="hover:text-blue-300 transition-colors font-medium">首頁</RouterLink>
           <RouterLink v-if="isLoggedIn && userRole === 'admin'" to="/admin" class="hover:text-blue-300 transition-colors font-medium">後台管理</RouterLink>
-          <RouterLink v-if="userRole !== 'admin'" to="/cart" class="hover:text-blue-300 transition-colors font-medium flex items-center gap-1">購物車 🛒</RouterLink>
+          <RouterLink v-if="userRole !== 'admin'" to="/cart" class="hover:text-blue-300 transition-colors font-medium flex items-center gap-1">購物車🛒</RouterLink>
+          <RouterLink v-if="isLoggedIn" to="/orders" class="hover:text-blue-300 transition-colors font-medium flex items-center gap-1">我的訂單📦</RouterLink>
         </div>
 
       </div>

@@ -53,6 +53,25 @@ const  submitOrder = () => {
         return;
     };
 
+    // 把商品跟顧客資料打包成一份「訂單紀錄」
+    const user = JSON.parse(localStorage.getItem('user'));
+    const orderId = `ORD-${Date.now()}`; // 小技巧：用系統當下毫秒數當作獨一無二的訂單編號
+    const newOrder = {
+        id: orderId,
+        date: new Date().toLocaleString(), // 記錄當下時間 (例如: 2024/5/20 下午1:30:00)
+        items: cart.value,                 // 買了什麼東西
+        total: totalAmount.value,          // 花了多少錢
+        info: { ...form.value }            // 收件人是誰
+    };
+
+    // 存入專屬「訂單保險箱」
+    const ordersKey = `my-orders-${user.username}`;
+    const existingOrders = JSON.parse(localStorage.getItem(ordersKey) || '[]');
+    
+    // 用 unshift 可以把新資料「插在陣列的最前面」，這樣客人在看歷史訂單時，最新的訂單才會在最上面！
+    existingOrders.unshift(newOrder); 
+    localStorage.setItem(ordersKey, JSON.stringify(existingOrders));
+
     alert('結帳成功！感謝您的購買！');
     // 清空購物車
     localStorage.removeItem(cartKey.value);

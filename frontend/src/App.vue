@@ -41,12 +41,13 @@ const handleLogout = () =>{
   // 1. 清除口袋裡的通行證
   localStorage.removeItem('token');
   localStorage.removeItem('user');
+  localStorage.removeItem('user_role');
   // 2. 更新狀態
   isLoggedIn.value = false;
   userRole.value = '';
   // 3. 踢回首頁
   alert('已登出');
-  router.push('/');
+  window.location.href = '/';
 }
 </script>
 
